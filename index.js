@@ -1,31 +1,22 @@
-const https = require('node:https');
+const http = require('node:http');
 const fs = require('node:fs/promises');
+const url = require('node:url');
+let port = 2000;
 
-https.createServer(async (req, res) => {
+http.createServer(async (req, res) => {
     try {
-        let filePath = '';
-        let statusCode = 200;
-        if (req.url === "/") {
-            filePath = 'index.html';
-        } else if (req.url === "/about") {
-            filePath = 'about.html';
-        } else if (req.url === "/contact-me") {
-            filePath = 'contact-me.html';
-        } else {
-            filePath = '404.html';
-            statusCode = 404;
-        }
-
-        const data = await fs.readFile(filePath, { encoding: "utf-8" });
-
+        const urlObject = url.parse(req.url, true);
+        const fileName = "." + (urlObject.pathname === "/" ? '/index.html' : urlObject.pathname + '.html');
+        const data = await fs.readFile(fileName, {encoding: "utf-8"});  
+        res.writeHead(200, {'Content-Type': "text/html"});
+        res.write(data);
+        res.end();
         
-        if (req.url === "/" || req.url === "/about" || req.url === "/contact-me") {
-            res.writeHead(statusCode, { 'Content-Type': 'text/html' });
-        }
-        res.end(data);
-
-    } catch (error) {
-        console.log(error, "file could not be read");
+    }   catch(err) {
+        res.writeHead(404, {'Content-Type': "text/html"});
+        const data = await fs.readFile("./404.html", {encoding: "utf-8"});  
+        res.write(data);
+        res.end();
     }
 })
-.listen(8080, () => console.log("listening on 8080"));
+.listen(port, () => console.log("listening on " + port));
